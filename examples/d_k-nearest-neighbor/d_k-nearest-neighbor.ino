@@ -7,7 +7,6 @@
 
 #include <SerialFlash.h>
 #include <SPI.h>
-const int FlashChipSelect = 21; // digital pin for flash chip CS pin
 
 void setup() {
   // put your setup code here, to run once:
@@ -20,7 +19,7 @@ void setup() {
   //trainNeuronsWithData();
 
  // Init. SPI Flash chip
-  if (!SerialFlash.begin(FlashChipSelect)) {
+  if (!SerialFlash.begin(ONBOARD_FLASH_SPI_PORT, ONBOARD_FLASH_CS_PIN)) {
     Serial.println("Unable to access SPI Flash chip");
   }
 
@@ -146,7 +145,7 @@ void restoreNetworkKnowledge ( void )
   SerialFlashFile file;
   int32_t fileNeuronCount = 0;
 
-  uint16_t savedState = CuriePME.beginRestoreMode();
+  CuriePME.beginRestoreMode();
   Intel_PMT::neuronData neuronData;
 
   // Open the file and read test data
@@ -193,7 +192,7 @@ void restoreNetworkKnowledge ( void )
     }
   }
 
-  CuriePME.endRestoreMode(savedState);
+  CuriePME.endRestoreMode();
   Serial.print("Knowledge Set Restored. \n");
 }
 

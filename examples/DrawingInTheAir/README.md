@@ -36,7 +36,7 @@ Firstly, we'll cover briefly how the PME works. We've said the PME can "learn"
 and "recognize" patterns in data, but what does that mean for you, the
 programmer?
 
-All of the learning and classiying functions that the PME provides can be
+All of the learning and classifying functions that the PME provides can be
 controlled using the CuriePME library. Let's start with learning...
 
 # Learning
@@ -289,7 +289,7 @@ function allows you to define what "close enough" means.
 to your Arduino 101 (https://www.arduino.cc/en/tutorial/pushbutton), or a shield
 with a button built-in. I am using the Danger Shield from Sparkfun
 (https://www.sparkfun.com/products/11649), which includes a button connected
-to digital pin 10.
+to digital pin 12.
 
 Now, we're going to forget about the PME for just a few minutes. We just
 learned how to use the `learn()` and `classify()` functions, and you probably
@@ -298,7 +298,7 @@ we will, but we need to move away from them for a bit and concentrate on another
 piece first.
 
 In order to use more complex patterns with the PME, we need to first analyze the
-data that we have, and try to identfy the patterns ourselves. Since the
+data that we have, and try to identify the patterns ourselves. Since the
 DrawingInTheAir example uses accelerometer data from the CurieIMU library, we
 will start by collecting some accelerometer data.
 
@@ -322,8 +322,8 @@ void setup()
     /* Set button pin as input */
     pinMode(buttonPin, INPUT);
 
-    /* Start the IMU (Intertial Measurement Unit) */
-    CurieIMU.begin();
+    /* Start the IMU (Inertial Measurement Unit), enable accelerometer only */
+    CurieIMU.begin(ACCEL);
 
     CurieIMU.setAccelerometerRate(sampleRateHZ);
     CurieIMU.setAccelerometerRange(4);
@@ -352,7 +352,7 @@ unsigned int readFromIMU(int buf[], unsigned int buf_size)
     while (digitalRead(buttonPin) == LOW) {
 
         /* Wait for new accelerometer data to be ready */
-        if (CurieIMU.accelDataReady()) {
+        if (CurieIMU.dataReady()) {
 
             /* Read the new x, y & z values into the buffer */
             CurieIMU.readAccelerometer(buf[i], buf[i + 1], buf[i + 2]);
@@ -459,7 +459,7 @@ first. The first problem...
 As we can see from the graphs above, drawing the letter 'A' takes an average of
 1.6 seconds, which is 160 samples at 100Hz. Each sample (i.e. each call to
 `CurieIMU.readAccelerometer()` takes up 3 'int' values, which are 4 bytes each,
-so 14 bytes per sample.
+so 12 bytes per sample.
 
 ```cpp
 int X, Y, Z;
@@ -468,7 +468,7 @@ int X, Y, Z;
 CurieIMU.readAccelerometer(X, Y, Z);
 ```
 
-This makes for a total of 2,560 bytes that we have to capture to represent the
+This makes for a total of 1,920 bytes that we have to capture to represent the
 letter 'A', which is *way* too much. Remember that our pattern can be no larger
 than 128 bytes, so we need to figure out a clever way to throw away **over 90%**
 of the raw data, without destroying the original pattern.
@@ -517,7 +517,7 @@ unsigned int readFromIMU(byte buf[], unsigned int buf_size)
     while (digitalRead(buttonPin) == LOW) {
 
         /* Wait for new accelerometer data to be ready */
-        if (CurieIMU.accelDataReady()) {
+        if (CurieIMU.dataReady()) {
 
             /* Read the new x, y & z values into the buffer */
             CurieIMU.readAccelerometer(temp[0], temp[1], temp[2]);
@@ -567,7 +567,7 @@ complicated. Let's stick with 1 byte per accelerometer value, which also means
 that our pattern size is limited to 42 samples, or 126 bytes (42 * 3 =
 126) -- just two bytes shy of a neuron's full capacity.
 
-To summarize, we are sampling the accelerometer at 100hz. In most cases, the
+To summarize, we are sampling the accelerometer at 100Hz. In most cases, the
 button will be held down for anywhere between 1 and 3 seconds-- possibly even
 longer-- meaning ``readFromIMU()`` will usually collect 100-300 samples. But no
 matter how many samples are captured, *we can only use 42 of them*. This means
@@ -653,7 +653,7 @@ fingers are constantly making little movements and adjustments as I'm holding
 the board-- even though it may look to me like I've moved my hand in a
 straight line, the accelerometer is able to pick up a lot of little movements
 that my eyes can't. Additionally, the accelerometer is not perfect, so
-it will not be 100% acurate, and there will always be a little bit of noise in
+it will not be 100% accurate, and there will always be a little bit of noise in
 the signal.
 
 The bottom line is, these little signal anomalies will make it more difficult
@@ -667,7 +667,7 @@ ADC or accelerometer readings. I'm going to explain how we can modify the
 ``undersample()`` function to incorporate an averaging filter.
 
 As was shown with the ``undersample()`` function (continuing with the same
-example dataset of 198 samples), we are only taking every 4th sample from the
+example data set of 198 samples), we are only taking every 4th sample from the
 sample window, and throwing away the rest. But instead of throwing away the
 in-between samples, we can use them! Have a look at the following lines from
 the ``undersample()`` function, where we copy a sample from the ``input``
@@ -777,7 +777,7 @@ void readFromIMU(byte vector[])
 
     /* While button is being held... */
     while (digitalRead(buttonPin) == HIGH) {
-        if (CurieIMU.accelDataReady()) {
+        if (CurieIMU.dataReady()) {
 
             CurieIMU.readAccelerometer(raw[0], raw[1], raw[2]);
 
